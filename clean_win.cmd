@@ -1,0 +1,1 @@
+rm -f *.tab.c *.tab.h *.exe lex.yy.c *.output *.o
