@@ -1,51 +1,73 @@
+digits [0-9]
+ws     [ \t]+  
+hex	   [a-fA-F0-9]
+string [a-zA-Z0-9]
+
 /* lex file for infix notation calculator */
 %option noyywrap
 
 %{
-//#define YYSTYPE char*     /* type for bison's var: yylval */
-
 #include <stdlib.h>        /* for atof(const char*) */
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 #include "y.tab.h"
+
+/* Prototype function */
+int toDecimal(char *);
+int getVar(char *);
+
 %}
 
-digits [0-9]
-op     [+-*/^%]
-ws     [ \t]+  
-h	   [a-fA-F0-9]
-string [a-zA-Z0-9]
 %%
-\n              return *yytext;
-{ws}            /* eats up white spaces */
-"("             return P_LEFT;
-")"             return P_RIGHT;
-"{"             return B_LEFT;
-"}"             return B_RIGHT;
-","             return COMMA;
-";"             return SEMI;
-{digits}+       yylval.i = atoi(yytext); return DEC;
-{h}+"h"         yylval.i = toDecimal(yytext); return HEX;// hexdecimal ex. F2A3h
-"showdec"       return SHOWDEC;
-"showhex"       return SHOWHEX;
-"print"         return PRINT;
-"println"       return PRINTLN;
-"$"[a-z]        yylval.i = calPos(yytext); return REG;
-"="             return ASSIGN;
-"if"            return IF;
-"else"          return ELSE;
-"<"             return LESS;
-"<="            return LESSEQ;
-">"             return MORE;
-">="            return MOREEQ;
-"=="            return ISEQUAL;
-"!="            return NOTEQUAL;
-"loop"          return LOOP;
-"endloop"       return ENDLOOP;
-{string}+       {yylval.s = strdup(yytext); return STRING; }
-.               return yytext[0];
 
+"showdec"       { return SHOWDEC;                                   }
+"showhex"       { return SHOWHEX;                                   }
+"print"         { return PRINT;                                     }
+"println"       { return PRINTLN;                                   }
+"if"            { return IF;                                        }
+"else"          { return ELSE;                                      }
+"loop"          { return LOOP;                                      }
+
+"("             { return P_LEFT;                                    }
+")"             { return P_RIGHT;                                   }
+"{"             { return B_LEFT;                                    }
+"}"             { return B_RIGHT;                                   }
+","             { return COMMA;                                     }
+";"             { return SEMI;                                      }
+
+"="             { return ASSIGN;                                    }
+"<"             { return LESS;                                      }
+"<="            { return LESSEQ;                                    }
+">"             { return MORE;                                      }
+">="            { return MOREEQ;                                    }
+"=="            { return ISEQUAL;                                   }
+"!="            { return NOTEQUAL;                                  }
+
+"$"[a-z]        { 
+                    yylval.i = getVar(yytext);
+                    return REG;           
+                }
+
+{ws}            /* eats up white spaces */
+{digits}+       { 
+                    yylval.i = atoi(yytext);
+                    return DEC;
+                }
+
+{hex}+"h"       {
+                    yylval.i = toDecimal(yytext);
+                    return HEX; // hexdecimal ex. F2A3h
+                }
+
+{string}+       {
+                    yylval.s = strdup(yytext);
+                    return STRING;
+                }
+
+\n              { return *yytext;                                   }      
+
+.               { return yytext[0];                                 }
 %%
 
 //convert hexadecomal to decimal
@@ -71,7 +93,7 @@ int toDecimal(char *yytext)
             val = yytext[i] - 65 + 10;
         }
 
-        decimal += val * pow(16, len);
+        decimal += val * (int)pow((double)16, len);
         len--;
         i++;
     }
@@ -80,13 +102,14 @@ int toDecimal(char *yytext)
 }
 
 // calculate subscript of array in register $rA-$rZ (0-25)
-int calPos(char *yytext) 
+int getVar(char *yytext) 
 {
     int pos=0;
     //if alphabet is uppercase
     if(yytext[1]>='A' && yytext[1]<='Z'){ 
         pos=yytext[1]-'A';
-    } 
+    }
+    
     //if alphabet is lowercase
     else if(yytext[1]>='a' && yytext[1]<='z')
     {
@@ -94,9 +117,9 @@ int calPos(char *yytext)
     }
     return pos;
 }
-int main()
+
+int main(int argc, char **argv)
 {
-    printf("> ");
     while(1)
     {
         yyparse();
