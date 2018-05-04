@@ -1,13 +1,16 @@
 #include <stdio.h>
+#include <string.h>
 #include "compiler4.h"
 #include "y.tab.h"
+
+extern int no_msg;
 
 int ex(nodeType *p) {
     if (!p) return 0;
     switch(p->type) {
     case typeCon:       return p->con.value;
     case typeId:        return sym[p->id.i];
-    case typeStr:       return p->id.str;
+    case typeStr:       return strlen(p->id.str);
     case typeOpr:
         switch(p->opr.oper) {
         case LOOP:     {  
@@ -25,8 +28,16 @@ int ex(nodeType *p) {
                         return 0;
         case SHOWDEC:   printf("%d\n", ex(p->opr.op[0])); return 0;
         case SHOWHEX:   printf("%xh\n", ex(p->opr.op[0])); return 0;
-        case PRINT:     printf("%s\n", ex(p->opr.op[0])); return 0;
-        case ';':       ex(p->opr.op[0]); return ex(p->opr.op[1]);
+        case PRINT:     {
+                            // printf("%s\n", ex(p->opr.op[0])); return 0;
+                            printf("\n\t\tMOV\trdx, %d\n", ex(p->opr.op[0]));
+                            printf("\t\tMOV\trcx, msg%0d\n", no_msg);
+                            printf("\t\tMOV\trbx, 1\n");
+                            printf("\t\tMOV\trax, 4\n");
+                            printf("\t\tINT\t80h\n");
+                            return 0;
+                        }
+        
         case '=':       return sym[p->opr.op[0]->id.i] = ex(p->opr.op[1]);
         case UMINUS:    return -ex(p->opr.op[0]);
         case '+':       return ex(p->opr.op[0]) + ex(p->opr.op[1]);

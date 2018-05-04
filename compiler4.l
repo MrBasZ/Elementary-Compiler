@@ -1,7 +1,7 @@
 digits [0-9]+
-ws     [ \t\n]+  
-hex	   [a-fA-F0-9]
-string [a-zA-Z0-9]
+ws     [ \t]+  
+hex	   [a-fA-F0-9]+
+strs   \"(\\.|[^\\"])*\"
 
 /* lex file for infix notation calculator */
 %option noyywrap
@@ -14,9 +14,12 @@ string [a-zA-Z0-9]
 #include "y.tab.h"
 
 /* Prototype function */
-void yyerror(char *);
 long toDecimal(char *);
 int getVar(char *);
+char *checkText(char *);
+
+int yylineno;
+int text_err;
 %}
 
 %%
@@ -31,18 +34,36 @@ int getVar(char *);
                     return CONSTANT;
                 }
 
-{hex}+"h"       {
+{hex}"h"       {
                     yylval.iValue = toDecimal(yytext);
                     return CONSTANT;
                 }
 
-{string}        {
-                    yylval.string = strdup(yytext);
+{strs}          {
+                    char s[1000];
+                    int i = 0;
+                    int j = 1;
+                    if(yytext[0] == 34 && yytext[yyleng-1] == 34){
+                        while(yyleng-i > 2){
+                            s[i++] = yytext[j++];
+                        }
+                        s[i] = '\0';
+                        yylval.string = s; 
+                    }
+                    
                     return STRING;
                 }
 
 [-()<>=+*/;{},] {
                     return *yytext;
+                }
+
+\n              {
+                    return NL;
+                }
+
+<<EOF>>         {
+                    return END_OF_FILE;
                 }
 
 ">="            return GE;
@@ -109,4 +130,23 @@ int getVar(char *yytext)
         pos=yytext[1]-'a';
     }
     return pos;
+}
+
+//check input string
+char *checkText(char *yytext){
+    char s[1000];
+    int i = 0;
+    int j = 1;
+    if(yytext[0] == 34 && yytext[yyleng-1] == 34){
+        while(yyleng-i > 2){
+            s[i++] = yytext[j++];
+        }
+        s[i] = '\0';
+        strcmp(yytext, s);
+        return yytext;
+    }
+    else{
+        return NULL;
+    }
+    return yytext;
 }
