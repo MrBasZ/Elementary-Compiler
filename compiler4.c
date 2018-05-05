@@ -88,14 +88,32 @@ int ex(nodeType *p) {
 
             switch(p->opr.oper) {               // opr possition -1 = head node, 0 = child node
             case '+':
-                printf("\t\tADD\trcx, rdx\n\n");
+                printf(";%d===\n", p->opr.poss);
+                if(p->opr.poss == -1){
+                    printf("\t\tADD\trcx, rdx\n\n");
+                    printf("\t\tMOV\trax, rcx\n\n");
+                } else if(p->opr.poss == 0){
+                    printf("\t\tADD\trcx, rdx\n\n");
+                } else if(p->opr.poss == 1){
+                    printf("\t\tADD\trdx, rcx\n\n");
+                }
                 break;
             case '-':
+                printf(";%d===\n", p->opr.poss);
                 printf("\t\tSUB\trcx, rdx\n");
+                
                 break;
             case '*':
+                printf(";%d===\n", p->opr.poss);
                 printf("\t\tMOV\trax, rcx\n");
                 printf("\t\tIMUL\trdx\n");
+                if(p->opr.poss == -1){
+                    //
+                } else if(p->opr.poss == 0){
+                    printf("\t\tMOV\trcx, rax\n\n");
+                } else if(p->opr.poss ==  1){
+                    printf("\t\tMOV\trdx, rax\n\n");
+                }
                 break;
             case '/':
                 printf("\t\tMOV\trax, rcx\n");   
