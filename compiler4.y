@@ -120,6 +120,7 @@ expr:
                                     $$ = opr(UMINUS, 1, $2);
                                     $2->id.poss = 0;
                                     $2->con.poss = 0;
+                                    $2->opr.poss = 0;
                                 }
         | expr '+' expr         { 
                                     $$ = opr('+', 2, $1, $3);
@@ -127,6 +128,9 @@ expr:
                                     $3->con.poss = 1;
                                     $1->id.poss = 0;
                                     $3->id.poss = 1;
+                                    $1->opr.poss = 0;
+                                    $3->opr.poss = 1;
+                                    
                                 }
         | expr '-' expr         { 
                                     $$ = opr('-', 2, $1, $3);
@@ -134,6 +138,8 @@ expr:
                                     $3->con.poss = 1;
                                     $1->id.poss = 0;
                                     $3->id.poss = 1;
+                                    $1->opr.poss = 0;
+                                    $3->opr.poss = 1;
                                 }
         | expr '*' expr         { 
                                     $$ = opr('*', 2, $1, $3);
@@ -141,6 +147,8 @@ expr:
                                     $3->con.poss = 1;
                                     $1->id.poss = 0;
                                     $3->id.poss = 1;
+                                    $1->opr.poss = 0;
+                                    $3->opr.poss = 1;
                                 }
         | expr '/' expr         { 
                                     if($3->con.value){
@@ -149,6 +157,8 @@ expr:
                                         $3->con.poss = 1;
                                         $1->id.poss = 0;
                                         $3->id.poss = 1;
+                                        $1->opr.poss = 0;
+                                        $3->opr.poss = 1;
                                     } else {
                                         yyerror("Error! Division by zero");
                                         YYABORT;
@@ -240,6 +250,7 @@ nodeType *opr(int oper, int nops, ...) {
     p->opr.oper = oper;
     p->opr.nops = nops;
     p->opr.poss = -1;
+
     /* Initializing arguments to store all values after num */
     va_start(ap, nops);
     for (i = 0; i < nops; i++){
