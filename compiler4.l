@@ -1,5 +1,5 @@
 digits [0-9]+
-ws     [ \t]+  
+ws     [ \t\n]+  
 hex	   [a-fA-F0-9]+
 strs   \"(\\.|[^\\"])*\"
 
@@ -56,10 +56,6 @@ int text_err;
 
 [-()<>=+*/;{},] {
                     return *yytext;
-                }
-
-\n              {
-                    return NL;
                 }
 
 <<EOF>>         {
