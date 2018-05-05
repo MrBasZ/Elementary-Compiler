@@ -15,7 +15,7 @@ int ex(nodeType *p) {
         if(p->con.poss == 0){   // position data for declare register
             printf("\t\tMOV\trcx, %ld\n", p->con.value);    // for many-constant
         } else if(p->con.poss == 1){
-            printf("\t\tMOV\trdx, %ld\n", p->con.value);    // for many-constant
+            printf("\t\tMOV\trbx, %ld\n", p->con.value);    // for many-constant
         } else{
             printf("\t\tMOV\trax, %ld\n", p->con.value);    // for one-constant
         }
@@ -24,7 +24,7 @@ int ex(nodeType *p) {
         if(p->id.poss == 0){
             printf("\t\tMOV\trcx, [Var%c]\n", p->id.i + 'a');   // for many-identifier
         } else if(p->id.poss == 0){
-            printf("\t\tMOV\trdx, [Var%c]\n", p->id.i + 'a');   // for many-identifier
+            printf("\t\tMOV\trbx, [Var%c]\n", p->id.i + 'a');   // for many-identifier
         } else{
             printf("\t\tMOV\trax, [Var%c]\n", p->id.i + 'a');   // for one-identifier
         }
@@ -60,7 +60,7 @@ int ex(nodeType *p) {
             }
             break;
         case PRINT:     
-            printf("\n\t\tMOV\trdx, %d\n", ex(p->opr.op[0]));
+            printf("\n\t\tMOV\trbx, %d\n", ex(p->opr.op[0]));
             printf("\t\tMOV\trcx, msg%0d\n", no_msg);
             printf("\t\tMOV\trbx, 1\n");
             printf("\t\tMOV\trax, 4\n");
@@ -90,35 +90,79 @@ int ex(nodeType *p) {
             case '+':
                 printf(";%d===\n", p->opr.poss);
                 if(p->opr.poss == -1){
-                    printf("\t\tADD\trcx, rdx\n\n");
+                    printf("\t\tADD\trcx, rbx\n\n");
                     printf("\t\tMOV\trax, rcx\n\n");
                 } else if(p->opr.poss == 0){
-                    printf("\t\tADD\trcx, rdx\n\n");
+                    printf("\t\tADD\trcx, rbx\n\n");
                 } else if(p->opr.poss == 1){
-                    printf("\t\tADD\trdx, rcx\n\n");
+                    printf("\t\tADD\trbx, rcx\n\n");
                 }
                 break;
             case '-':
                 printf(";%d===\n", p->opr.poss);
-                printf("\t\tSUB\trcx, rdx\n");
                 
+                if(p->opr.poss == -1){
+                    printf("\t\tSUB\trcx, rbx\n");
+                    printf("\t\tMOV\trax, rcx\n\n");
+                } else if(p->opr.poss == 0){
+                    printf("\t\tSUB\trcx, rbx\n");
+                } else if(p->opr.poss == 1){
+                    printf("\t\tNEG\trcx\n");
+                    printf("\t\tSUB\trcx, rbx\n");
+                }
                 break;
             case '*':
                 printf(";%d===\n", p->opr.poss);
-                printf("\t\tMOV\trax, rcx\n");
-                printf("\t\tIMUL\trdx\n");
                 if(p->opr.poss == -1){
-                    //
+                    printf("\t\tMOV\trax, rcx\n");
+                    printf("\t\tIMUL\trbx\n");
+                    //move to rax
                 } else if(p->opr.poss == 0){
+                    printf("\t\tMOV\trax, rcx\n");
+                    printf("\t\tIMUL\trbx\n");
                     printf("\t\tMOV\trcx, rax\n\n");
                 } else if(p->opr.poss ==  1){
-                    printf("\t\tMOV\trdx, rax\n\n");
+                    printf("\t\tMOV\trax, rbx\n");
+                    printf("\t\tIMUL\trcx\n");
+                    printf("\t\tMOV\trbx, rax\n\n");
                 }
                 break;
             case '/':
-                printf("\t\tMOV\trax, rcx\n");   
-                printf("\t\tDIV\trcx, rdx\n");
-                printf("\t\tMOV\trdx, rax\n");
+                printf(";%d===\n", p->opr.poss);
+                if(p->opr.poss == -1){
+                    printf("\t\tMOV\trdx, 0\n");
+                    printf("\t\tMOV\trax, rcx\n");   
+                    printf("\t\tDIV\trbx\n");
+                    //printf("\t\tMOV\trax, rax\n");
+                } else if(p->opr.poss == 0){
+                    printf("\t\tMOV\trdx, 0\n");
+                    printf("\t\tMOV\trax, rcx\n");
+                    printf("\t\tDIV\trbx\n");
+                    printf("\t\tMOV\trcx, rax\n\n");
+                } else if(p->opr.poss ==  1){
+                    printf("\t\tMOV\trdx, 0\n");
+                    printf("\t\tMOV\trax, rb\n");
+                    printf("\t\tDIV\trcx\n");
+                    printf("\t\tMOV\trbx, rax\n\n");                }
+                break;
+            case '%':
+                printf(";%d===\n", p->opr.poss);
+                if(p->opr.poss == -1){
+                    printf("\t\tMOV\trdx, 0\n");
+                    printf("\t\tMOV\trax, rcx\n");   
+                    printf("\t\tDIV\trbx\n");
+                    printf("\t\tMOV\trax, rdx\n");
+                } else if(p->opr.poss == 0){
+                    printf("\t\tMOV\trdx, 0\n");
+                    printf("\t\tMOV\trax, rcx\n");   
+                    printf("\t\tDIV\trbx\n");
+                    printf("\t\tMOV\trcx, rdx\n");
+                } else if(p->opr.poss ==  1){
+                    printf("\t\tMOV\trdx, 0\n");
+                    printf("\t\tMOV\trax, rbx\n");   
+                    printf("\t\tDIV\trcx\n");
+                    printf("\t\tMOV\trbx, rdx\n");
+                }
                 break;
             case '<':   printf("\tcompLT\n"); break;
             case '>':   printf("\tcompGT\n"); break;

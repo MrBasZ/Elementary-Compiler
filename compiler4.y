@@ -165,6 +165,21 @@ expr:
                                     }
                                     
                                 }
+        | expr '%' expr         { 
+                                    if($3->con.value){
+                                        $$ = opr('%', 2, $1, $3);
+                                        $1->con.poss = 0;
+                                        $3->con.poss = 1;
+                                        $1->id.poss = 0;
+                                        $3->id.poss = 1;
+                                        $1->opr.poss = 0;
+                                        $3->opr.poss = 1;
+                                    } else {
+                                        yyerror("Error! Division by zero");
+                                        YYABORT;
+                                    }
+                                    
+                                }                        
         | expr '<' expr         { $$ = opr('<', 2, $1, $3); }
         | expr '>' expr         { $$ = opr('>', 2, $1, $3); }
         | expr GE expr          { $$ = opr(GE, 2, $1, $3); }
