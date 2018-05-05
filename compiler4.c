@@ -20,8 +20,14 @@ int ex(nodeType *p) {
             printf("\t\tMOV\trax, %ld\n", p->con.value);    // for one-constant
         }
         break;
-    case typeId:        
-        printf("\tpush\t%c\n", p->id.i + 'a'); 
+    case typeId:        //tpye identifier Ex. $a, $b, .. ,$z
+        if(p->id.poss == 0){
+            printf("\t\tMOV\trcx, [Var%c]\n", p->id.i + 'a');   // for many-identifier
+        } else if(p->id.poss == 0){
+            printf("\t\tMOV\trdx, [Var%c]\n", p->id.i + 'a');   // for many-identifier
+        } else{
+            printf("\t\tMOV\trax, [Var%c]\n", p->id.i + 'a');   // for one-identifier
+        }
         break;
     case typeStr:
         return strlen(p->id.str);   //calculate string leng
@@ -68,24 +74,34 @@ int ex(nodeType *p) {
             break;
         case '=':       
             ex(p->opr.op[1]);
-            printf("\tpop\t%c\n", p->opr.op[0]->id.i + 'a');
+            printf("\t\tMOV\t[Var%c], rax\n", p->opr.op[0]->id.i + 'a');
             break;
         case UMINUS:    
             ex(p->opr.op[0]);
-            printf("\tneg\n");
+            printf("\t\tNEG\n");
             break;
         default:
             ex(p->opr.op[0]);
+            printf("\t\tPUSH\trcx\n");
             ex(p->opr.op[1]);
-            switch(p->opr.oper) {
+            printf("\n\t\tPOP\trcx\n");
+
+            switch(p->opr.oper) {               // opr possition -1 = head node, 0 = child node
             case '+':
-                printf("\t\tADD\trcx, rdx\n");
+                printf("\t\tADD\trcx, rdx\n\n");
                 break;
             case '-':
                 printf("\t\tSUB\trcx, rdx\n");
                 break;
-            case '*':   printf("\t\tMUL\n"); break;
-            case '/':   printf("\tdiv\n"); break;
+            case '*':
+                printf("\t\tMOV\trax, rcx\n");
+                printf("\t\tIMUL\trdx\n");
+                break;
+            case '/':
+                printf("\t\tMOV\trax, rcx\n");   
+                printf("\t\tDIV\trcx, rdx\n");
+                printf("\t\tMOV\trdx, rax\n");
+                break;
             case '<':   printf("\tcompLT\n"); break;
             case '>':   printf("\tcompGT\n"); break;
             case GE:    printf("\tcompGE\n"); break;

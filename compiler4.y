@@ -51,7 +51,7 @@ save_texts *h, *t = NULL;
 
 %left       GE LE EQ NE '>' '<'
 %left       '+' '-'
-%left       '*' '/'
+%left       '*' '/' '%'
 %nonassoc   UMINUS
 
 %type <nPtr> stmt expr stmt_list text
@@ -78,8 +78,16 @@ file:
         ;
 
 line:   
-           stmt                   { ex($1); freeNode($1);}
-        |  line stmt              { ex($2); freeNode($2);}
+           stmt                     { 
+                                        //printf("SAVE\n");
+                                        ex($1); freeNode($1);
+                                        //printf("RESAVE\n");
+                                    }
+        |  line stmt                {   
+                                        //printf("SAVE\n");
+                                        ex($2); freeNode($2);
+                                        //printf("RESAVE\n");
+                                    }
         ;
 
 stmt:   
@@ -105,10 +113,14 @@ stmt_list:
         | stmt_list stmt        { $$ = opr(';', 2, $1, $2); }
         ;
 
-expr:
+expr:                           
           CONSTANT              { $$ = con($1); }
         | VARIABLE              { $$ = id($1); }
-        | '-' expr %prec UMINUS { $$ = opr(UMINUS, 1, $2); }
+        | '-' expr %prec UMINUS { 
+                                    $$ = opr(UMINUS, 1, $2);
+                                    $2->id.poss = 0;
+                                    $2->con.poss = 0;
+                                }
         | expr '+' expr         { 
                                     $$ = opr('+', 2, $1, $3);
                                     $1->con.poss = 0;
@@ -123,8 +135,26 @@ expr:
                                     $1->id.poss = 0;
                                     $3->id.poss = 1;
                                 }
-        | expr '*' expr         { $$ = opr('*', 2, $1, $3); }
-        | expr '/' expr         { $$ = opr('/', 2, $1, $3); }
+        | expr '*' expr         { 
+                                    $$ = opr('*', 2, $1, $3);
+                                    $1->con.poss = 0;
+                                    $3->con.poss = 1;
+                                    $1->id.poss = 0;
+                                    $3->id.poss = 1;
+                                }
+        | expr '/' expr         { 
+                                    if($3->con.value){
+                                        $$ = opr('/', 2, $1, $3);
+                                        $1->con.poss = 0;
+                                        $3->con.poss = 1;
+                                        $1->id.poss = 0;
+                                        $3->id.poss = 1;
+                                    } else {
+                                        yyerror("Error! Division by zero");
+                                        YYABORT;
+                                    }
+                                    
+                                }
         | expr '<' expr         { $$ = opr('<', 2, $1, $3); }
         | expr '>' expr         { $$ = opr('>', 2, $1, $3); }
         | expr GE expr          { $$ = opr(GE, 2, $1, $3); }
@@ -209,7 +239,7 @@ nodeType *opr(int oper, int nops, ...) {
     p->type = typeOpr;
     p->opr.oper = oper;
     p->opr.nops = nops;
-
+    p->opr.poss = -1;
     /* Initializing arguments to store all values after num */
     va_start(ap, nops);
     for (i = 0; i < nops; i++){

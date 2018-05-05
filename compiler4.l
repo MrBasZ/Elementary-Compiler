@@ -54,7 +54,7 @@ int text_err;
                     return STRING;
                 }
 
-[-()<>=+*/;{},] {
+[-()<>=+*/%;{},] {
                     return *yytext;
                 }
 

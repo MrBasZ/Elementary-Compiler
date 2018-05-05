@@ -9,7 +9,7 @@ typedef struct {
 /* identifiers */
 typedef struct {
     int i;                      /* subscript to sym array */
-    int poss;                   /* 0=left, 1=right */
+    int poss;                   /* 0=left node, 1=right node */
     char *str;                  /* value of string */
 } idNodeType;
 
@@ -17,6 +17,7 @@ typedef struct {
 typedef struct {
     int oper;                   /* operator */
     int nops;                   /* number of operands */
+    int poss;                   /* -1 = start node */
     struct nodeTypeTag *op[1];	/* operands, extended at runtime */
 } oprNodeType;
 
