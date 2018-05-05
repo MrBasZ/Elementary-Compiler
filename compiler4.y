@@ -42,7 +42,7 @@ save_texts *h, *t = NULL;
 
 %token      <iValue> CONSTANT
 %token      <sIndex> VARIABLE
-%token      <string> STRING NL
+%token      <string> STRING
 %token      LOOP IF PRINT PRINTLN SHOWDEC SHOWHEX
 %nonassoc   IFX
 %nonassoc   ELSE
@@ -72,21 +72,22 @@ file:
 
                                     // append text data
                                     print_dataText(h);
+                                    // clear list text
                                     free(h);
                                 }
         ;
 
-line:   line NL
-        |  stmt                   { ex($1); freeNode($1);}
+line:   
+           stmt                   { ex($1); freeNode($1);}
         |  line stmt              { ex($2); freeNode($2);}
         ;
 
-stmt:   ';'                                 {}
+stmt:   
+          PRINT '(' text ')' ';'            { $$ = opr(PRINT, 1, $3); }
         | SHOWDEC '(' expr ')' ';'          { $$ = opr(SHOWDEC, 1, $3); }
         | SHOWHEX '(' expr ')' ';'          { $$ = opr(SHOWHEX, 1, $3); }
         | PRINTLN '(' ')' ';'               { printf("\n"); }
         | expr ';'                          { $$ = $1; }
-        | PRINT '(' text ')' ';'            { $$ = opr(PRINT, 1, $3); }
         | VARIABLE '=' expr ';'             { $$ = opr('=', 2, id($1), $3); }
         | LOOP '(' expr ',' expr ')' stmt   { $$ = opr(LOOP, 3, $3, $5, $7); }
         | IF '(' expr ')' stmt %prec IFX    { $$ = opr(IF, 2, $3, $5); }
@@ -108,8 +109,20 @@ expr:
           CONSTANT              { $$ = con($1); }
         | VARIABLE              { $$ = id($1); }
         | '-' expr %prec UMINUS { $$ = opr(UMINUS, 1, $2); }
-        | expr '+' expr         { $$ = opr('+', 2, $1, $3); }
-        | expr '-' expr         { $$ = opr('-', 2, $1, $3); }
+        | expr '+' expr         { 
+                                    $$ = opr('+', 2, $1, $3);
+                                    $1->con.poss = 0;
+                                    $3->con.poss = 1;
+                                    $1->id.poss = 0;
+                                    $3->id.poss = 1;
+                                }
+        | expr '-' expr         { 
+                                    $$ = opr('-', 2, $1, $3);
+                                    $1->con.poss = 0;
+                                    $3->con.poss = 1;
+                                    $1->id.poss = 0;
+                                    $3->id.poss = 1;
+                                }
         | expr '*' expr         { $$ = opr('*', 2, $1, $3); }
         | expr '/' expr         { $$ = opr('/', 2, $1, $3); }
         | expr '<' expr         { $$ = opr('<', 2, $1, $3); }
@@ -133,6 +146,7 @@ nodeType *con(int value) {
     /* copy information */
     p->type = typeCon;
     p->con.value = value;
+    p->con.poss = -1;
 
     return p;
 }
@@ -147,6 +161,7 @@ nodeType *id(int i) {
     /* copy information */
     p->type = typeId;
     p->id.i = i;
+    p->id.poss = -1;
 
     return p;
 }
@@ -197,8 +212,10 @@ nodeType *opr(int oper, int nops, ...) {
 
     /* Initializing arguments to store all values after num */
     va_start(ap, nops);
-    for (i = 0; i < nops; i++)
-        p->opr.op[i] = va_arg(ap, nodeType*);
+    for (i = 0; i < nops; i++){
+            p->opr.op[i] = va_arg(ap, nodeType*);
+            
+        }
     va_end(ap); // Cleans up the list
     return p;
 }
@@ -215,11 +232,11 @@ void freeNode(nodeType *p) {
 }
 
 void yyerror(char *s) {
-    fprintf(stdout, "\n\n %s!\n", s);
+    fprintf(stdout, "\n\n; %s!\n", s);
 }
 
 //text section
-char *header = "\t\tSECTION\t.text\n\t\tglobal\t_start\n\n_start:";
+char *header = "\t\tSECTION\t.text\n\t\tglobal\t_start\n\n_start:\n";
 
 int main(int argc, char* argv[]) {
 
@@ -240,7 +257,7 @@ int main(int argc, char* argv[]) {
                 return -1;
             }
 
-            printf("\n\t======== parsed! ========\n");
+            printf("\n; ======== parsed! ========\n");
             
     }
     return 0;
